@@ -132,3 +132,4 @@ dmypy.json
 data/
 models/
 .DS_Store
+config.ini

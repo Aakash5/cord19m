@@ -233,7 +233,11 @@ class Cord19():
 
         if not cord_uids and os.path.isfile(out_path):
             # check if processed file available
+            start = time.time()
+            print('loading from saved file', out_path)
             self.df_docs = pd.read_excel(out_path)
+            print('loaded in %0.2fs' % (time.time() - start))
+            return
         elif not cord_uids and not os.path.isfile(out_path):
             # processed complete metadata
             metadata_filtered = self.metadata
@@ -257,10 +261,24 @@ class Cord19():
 
         if not cord_uids:
             print('Saving file')
-            self.df_docs.to_excel(out_path)
+            self.df_docs.to_excel(out_path, index=False)
 
     def get_paper_by_id(self, cord_uid):
-        pass
+        """
+        Return metadata(series) and text data(dataframe) by cord_uid
+
+        Args:
+            cord_uids: id of document
+        """
+        try:
+            return self.metadata[self.metadata['cord_uid'] ==
+                                 cord_uid].T.iloc[:, 0], self.df_docs[
+                                     self.df_docs['cord_uid'] == cord_uid]
+        except Exception as e:
+            print(
+                "Error fetching data for cord_uid: {}.\nCheck if text data loaded properly"
+                .format(cord_uid), e)
+            return None, None
 
 
 if __name__ == '__main__':
