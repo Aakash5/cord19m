@@ -3,6 +3,7 @@
 # pip install bert-extractive-summarizer, torch
 from transformers import *
 from summarizer import Summarizer
+import torch
 import os
 from spacy.lang.en import English
 import time
@@ -44,6 +45,8 @@ class LanguageModel():
     """docstring for LanguageModel"""
     MODELS = {
         'bert-base-uncased': (BertModel, BertTokenizer),
+        'bert-base-cased': (BertModel, BertTokenizer),
+        'biobert_v1.1_pubmed': (BertModel, BertTokenizer),
         'bert-large-uncased': (BertModel, BertTokenizer),
         'xlnet-base-cased': (XLNetModel, XLNetTokenizer),
         'xlm-mlm-enfr-1024': (XLMModel, XLMTokenizer),
@@ -59,6 +62,9 @@ class LanguageModel():
             cache_dir = os.path.join(cache_dir, model_name)
             os.makedirs(cache_dir, exist_ok=True)
 
+        if model_name == 'biobert_v1.1_pubmed':
+            model_name = 'bert-base-cased'
+
         self.sentence_handler = SentenceHandler()
 
         base_model, base_tokenizer = self.MODELS.get(model_name, (None, None))
@@ -73,24 +79,57 @@ class LanguageModel():
                 custom_tokenizer=self.tokenizer,
                 sentence_handler=self.sentence_handler)
 
+            self.model.eval()
+        else:
+            print('model not loaded')
+
     def get_summarizer(self):
         return self.summmarizer
 
-    def get_sentences_embeddings(self,
-                                 text: str,
-                                 min_length: int = 60,
-                                 max_length: int = 600,
-                                 hidden: int = -2,
-                                 reduce_option: str = 'mean'):
+    def tokenize_input(self, text: str):
         """
-        :param min_length: Minimum length of sentence candidates
-        :param max_length: Maximum length of sentence candidates
-        :param hidden: This signifies which layer of the BERT model you would like to use as embeddings.
-        :param reduce_option: Given the output of the bert model, this param determines how you want to reduce results.
+        Tokenizes the text input.
+
+        :param text: Text to tokenize
+        :return: Returns a torch tensor
+        """
+        tokenized_text = self.tokenizer.tokenize(text)
+        indexed_tokens = self.tokenizer.convert_tokens_to_ids(tokenized_text)
+        return torch.tensor([indexed_tokens])
+
+    def get_sentence_embeddings(self,
+                                text: str,
+                                hidden: int = -2,
+                                squeeze: bool = False,
+                                reduce_option: str = 'mean'):
+        """
+        Extracts the embeddings for the given text
+
+        :param text: The text to extract embeddings for.
+        :param hidden: The hidden layer to use for a readout handler
+        :param squeeze: If we should squeeze the outputs (required for some layers)
+        :param reduce_option: How we should reduce the items.
+        :return: A numpy array.
         """
 
-        sentences = self.sentence_handler(text, min_length, max_length)
-        return self.model(sentences, self.hidden, self.reduce_option)
+        tokens_tensor = self.tokenize_input(text)
+        pooled, hidden_states = self.model(tokens_tensor)[-2:]
+
+        if -1 > hidden > -12:
+
+            if reduce_option == 'max':
+                pooled = hidden_states[hidden].max(dim=1)[0]
+
+            elif reduce_option == 'median':
+                pooled = hidden_states[hidden].median(dim=1)[0]
+
+            else:
+                pooled = hidden_states[hidden].mean(dim=1)
+
+        if squeeze:
+            return pooled.detach().numpy().squeeze()
+
+        return pooled
 
     def summarize(self,
                   text,
