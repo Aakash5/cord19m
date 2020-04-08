@@ -9,13 +9,11 @@ from src.python.modules.bioasqbiobert.run_factoid import *
 
 class QAModel():
 
-    def __init__(self, bert_directory_path,
-                 output_dir="/Users/e094870/PycharmProjects/Covid-19/cord19m/data/bioasqbiobert/resources"):
+    def __init__(self, bert_directory_path, output_dir="data/bioasqbiobert/outputs"):
 
-        self.bert_config_file = os.path.join(bert_directory_path, "bert_config.json")  # "bert_config.json"
-        self.output_dir = output_dir  # "/Users/e094870/PycharmProjects/Covid-19/cord19m/data/bioasqbiobert/resources/"
-        self.vocab_file = os.path.join(bert_directory_path,
-                                       "vocab.txt")  # "/Users/e094870/PycharmProjects/Covid-19/cord19m/data/bioasqbiobert/BERT-pubmed-1000000-SQuAD2/vocab.txt"
+        self.bert_config_file = os.path.join(bert_directory_path, "bert_config.json")
+        self.output_dir = output_dir
+        self.vocab_file = os.path.join(bert_directory_path, "vocab.txt")
         self.do_lower_case = True
         self.use_tpu = False
         self.tpu_name = None
@@ -134,21 +132,7 @@ class QAModel():
         return self.predict(eval_examples, eval_features, eval_writer, to_dump_to_file=to_dump_to_file)
 
     def predict_from_dict(self, inp, to_dump_to_file=False):
-        if isinstance(inp, dict): ## if dictionary type
+        if isinstance(inp, dict):  ## if dictionary type
             inp = [inp]
         eval_examples, eval_writer, eval_features = self.create_input(inp)
         return self.predict(eval_examples, eval_features, eval_writer, to_dump_to_file=to_dump_to_file)
-
-
-# obj = QAModel(
-#     bert_directory_path="/Users/e094870/PycharmProjects/Covid-19/cord19m/data/bioasqbiobert/BERT-pubmed-1000000-SQuAD2/")
-#
-# inp = {
-#     'context': "Controversy remains over whether the novel coronavirus 2019 (COVID-19) virus may have infectivity during the incubation period before the onset of symptoms. The author had the opportunity to examine the infectivity of COVID-19 during the incubation period by conducting an epidemiological survey on a confirmed patient who had visited Jeju Island during the incubation period. The epidemiological findings support the claim that the COVID-19 virus does not have infectivity during the incubation period.",
-#     "id": '1', "question": "What is the incubation period?"}
-# #responses = obj.predict_from_dict(inp)
-# #print(responses)
-#
-# input_file = "/Users/e094870/PycharmProjects/Covid-19/bioasq-biobert/BioASQ-67b-15Oct2019/BioASQ-6b/test/Full-Abstract/BioASQ-new-test1.json"
-# responses = obj.predict_from_json(input_file)
-# print(responses)
