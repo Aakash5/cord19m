@@ -246,9 +246,10 @@ class Cord19():
             metadata_filtered = self.metadata[self.metadata.cord_uid.isin(
                 cord_uids)]
 
+        total_docs = len(metadata_filtered.index)
+
         df_docs = []
-        for index, row in tqdm(self.metadata.iterrows(),
-                               total=self.total_docs):
+        for index, row in tqdm(metadata_filtered.iterrows(), total=total_docs):
 
             df_docs.append(self.load_json_document(row))
 
